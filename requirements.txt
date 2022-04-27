@@ -4,6 +4,6 @@ altair
 pandas
 numpy
 control
-matplotlib.pyplot
+matplotlib
 io
 math
