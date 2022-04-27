@@ -3,7 +3,6 @@ streamlit_option_menu
 altair
 pandas
 numpy
-csv
 control
 matplotlib.pyplot
 io
