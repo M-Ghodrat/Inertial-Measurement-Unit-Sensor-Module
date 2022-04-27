@@ -1,0 +1,9 @@
+streamlit
+streamlit_option_menu
+pandas
+numpy
+csv
+control
+matplotlib.pyplot
+io
+math
