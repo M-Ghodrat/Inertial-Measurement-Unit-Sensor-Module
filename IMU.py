@@ -9,7 +9,15 @@ import io
 from io import StringIO
 import math
 
-# uploaded_file = None
+
+
+global w_c
+global w_c2
+global cal_period
+
+w_c = 2 * np.pi
+w_c2 = 2 * np.pi
+cal_period = 1.0
 
 def ToEulerAngles(Quaternion):
     
@@ -91,9 +99,10 @@ def IMU_write(file, sep=',', index=False, accelerations=['LIN_ACC_NO_GRAVITY_x',
     
     return Acceleration, AngularPosition
 
-pi = 3.14
+def IMU_filter2(Acceleration, AngularPosition, w_c):
+    return Acceleration, AngularPosition
 
-def IMU_filter(Acceleration, AngularPosition, w_c=2*pi):
+def IMU_filter(Acceleration, AngularPosition, w_c):
     
     g = -9.81
     BF = [None] * 3
@@ -140,23 +149,23 @@ def IMU_plot(Acceleration, AngularPosition,
     
     T = np.array(range(Acceleration.shape[0])) * dt
     
-    fig, ax = plt.subplots(2, 3, figsize=(15,8))
-    ax[0, 0].plot(T, Acceleration[accelerations[1]])
+    fig, ax = plt.subplots(2, 3, figsize=(15,8), facecolor="#586e75")
+    ax[0, 0].plot(T, Acceleration[accelerations[1]], color='red')
     ax[0, 0].set_title('Surge Acceleration')
 #     ax[0, 0].set_ylim([Acceleration.min()[0]-0.1*np.abs(Acceleration.min()[0]),Acceleration.max()[0]+0.1*np.abs(Acceleration.max()[0])])
-    ax[0, 1].plot(T, Acceleration[accelerations[0]])
+    ax[0, 1].plot(T, Acceleration[accelerations[0]], color='red')
     ax[0, 1].set_title('Sway Acceleration')
 #     ax[0, 1].set_ylim([Acceleration.min()[1]-0.1*np.abs(Acceleration.min()[1]),Acceleration.max()[1]+0.1*np.abs(Acceleration.max()[1])])
-    ax[0, 2].plot(T, Acceleration[accelerations[2]])
+    ax[0, 2].plot(T, Acceleration[accelerations[2]], color='red')
     ax[0, 2].set_title('Heave Acceleration')
 #     ax[0, 2].set_ylim([Acceleration.min()[2]-0.1*np.abs(Acceleration.min()[2]),Acceleration.max()[2]+0.1*np.abs(Acceleration.max()[2])])
-    ax[1, 0].plot(T, AngularPosition[angularpositions[1]])
+    ax[1, 0].plot(T, AngularPosition[angularpositions[1]], color='red')
     ax[1, 0].set_title('Roll Rotation')
 #     ax[1, 0].set_ylim([AngularPosition.min()[0]-0.1*np.abs(AngularPosition.min()[0]),AngularPosition.max()[0]+0.1*np.abs(AngularPosition.max()[0])])
-    ax[1, 1].plot(T, AngularPosition[angularpositions[0]])
+    ax[1, 1].plot(T, AngularPosition[angularpositions[0]], color='red')
     ax[1, 1].set_title('Pitch Rotation')
 #     ax[1, 1].set_ylim([AngularPosition.min()[1]-0.1*np.abs(AngularPosition.min()[1]),AngularPosition.max()[1]+0.1*np.abs(AngularPosition.max()[1])])
-    ax[1, 2].plot(T, AngularPosition[angularpositions[2]])
+    ax[1, 2].plot(T, AngularPosition[angularpositions[2]], color='red')
     ax[1, 2].set_title('Yaw Rotation')
 #     ax[1, 2].set_ylim([AngularPosition.min()[2]-0.1*np.abs(AngularPosition.min()[2]),AngularPosition.max()[2]+0.1*np.abs(AngularPosition.max()[2])])
     
@@ -166,7 +175,119 @@ def IMU_plot(Acceleration, AngularPosition,
     ax[1, 0].set_ylim([-0.05+min(AngularPosition['EulerAngle_y']),0.05+max(AngularPosition['EulerAngle_y'])])
     ax[1, 1].set_ylim([-0.05+min(AngularPosition['EulerAngle_x']),0.05+max(AngularPosition['EulerAngle_x'])])
     ax[1, 2].set_ylim([-0.05+min(AngularPosition['EulerAngle_z']),0.05+max(AngularPosition['EulerAngle_z'])])
-        
+    
+    ax[0, 0].set_facecolor("#002b36") 
+    ax[0, 1].set_facecolor("#002b36") 
+    ax[0, 2].set_facecolor("#002b36") 
+    ax[1, 0].set_facecolor("#002b36")
+    ax[1, 1].set_facecolor("#002b36")
+    ax[1, 2].set_facecolor("#002b36")
+    st.pyplot(fig)
+
+def new_IMU_plot_cal(Acceleration, AngularPosition,
+             accelerations=['LIN_ACC_NO_GRAVITY_x', 'LIN_ACC_NO_GRAVITY_y', 'LIN_ACC_NO_GRAVITY_z'],
+             angularpositions=['EulerAngle_x', 'EulerAngle_y', 'EulerAngle_z']):
+    
+    T = np.array(range(Acceleration.shape[0])) * dt
+    
+    fig, ax = plt.subplots(2, 3, figsize=(15,8), facecolor="#586e75")
+    ax[0, 0].plot(T, IMU[accelerations[1]], color='red')
+    ax[0, 0].plot(T, Acceleration[accelerations[1]], color='yellow')
+    ax[0, 0].legend(('original','calibrated'))
+    ax[0, 0].set_title('Surge Acceleration')
+#     ax[0, 0].set_ylim([Acceleration.min()[0]-0.1*np.abs(Acceleration.min()[0]),Acceleration.max()[0]+0.1*np.abs(Acceleration.max()[0])])
+    ax[0, 1].plot(T, IMU[accelerations[0]], color='red')
+    ax[0, 1].plot(T, Acceleration[accelerations[0]], color='yellow')
+    ax[0, 1].legend(('original','calibrated'))
+    ax[0, 1].set_title('Sway Acceleration')
+#     ax[0, 1].set_ylim([Acceleration.min()[1]-0.1*np.abs(Acceleration.min()[1]),Acceleration.max()[1]+0.1*np.abs(Acceleration.max()[1])])
+    ax[0, 2].plot(T, IMU[accelerations[2]], color='red')
+    ax[0, 2].plot(T, Acceleration[accelerations[2]], color='yellow')
+    ax[0, 2].legend(('original','calibrated'))
+    ax[0, 2].set_title('Heave Acceleration')
+#     ax[0, 2].set_ylim([Acceleration.min()[2]-0.1*np.abs(Acceleration.min()[2]),Acceleration.max()[2]+0.1*np.abs(Acceleration.max()[2])])
+    ax[1, 0].plot(T, IMU[angularpositions[1]], color='red')
+    ax[1, 0].plot(T, AngularPosition[angularpositions[1]], color='yellow')
+    ax[1, 0].legend(('original','calibrated'))
+    ax[1, 0].set_title('Roll Rotation')
+#     ax[1, 0].set_ylim([AngularPosition.min()[0]-0.1*np.abs(AngularPosition.min()[0]),AngularPosition.max()[0]+0.1*np.abs(AngularPosition.max()[0])])
+    ax[1, 1].plot(T, IMU[angularpositions[0]], color='red')
+    ax[1, 1].plot(T, AngularPosition[angularpositions[0]], color='yellow')
+    ax[1, 1].legend(('original','calibrated'))
+    ax[1, 1].set_title('Pitch Rotation')
+#     ax[1, 1].set_ylim([AngularPosition.min()[1]-0.1*np.abs(AngularPosition.min()[1]),AngularPosition.max()[1]+0.1*np.abs(AngularPosition.max()[1])])
+    ax[1, 2].plot(T, IMU[angularpositions[2]], color='red')
+    ax[1, 2].plot(T, AngularPosition[angularpositions[2]], color='yellow')
+    ax[1, 2].legend(('original','calibrated'))
+    ax[1, 2].set_title('Yaw Rotation')
+#     ax[1, 2].set_ylim([AngularPosition.min()[2]-0.1*np.abs(AngularPosition.min()[2]),AngularPosition.max()[2]+0.1*np.abs(AngularPosition.max()[2])])
+    
+    ax[0, 0].set_ylim([-0.05+min(min(Acceleration['LIN_ACC_NO_GRAVITY_y']), min(IMU['LIN_ACC_NO_GRAVITY_y'])),0.05+max(max(Acceleration['LIN_ACC_NO_GRAVITY_y']),max(IMU['LIN_ACC_NO_GRAVITY_y']))])
+    ax[0, 1].set_ylim([-0.05+min(min(Acceleration['LIN_ACC_NO_GRAVITY_x']),min(IMU['LIN_ACC_NO_GRAVITY_x'])),0.05+max(max(Acceleration['LIN_ACC_NO_GRAVITY_x']),max(IMU['LIN_ACC_NO_GRAVITY_x']))])
+    ax[0, 2].set_ylim([-0.05+min(min(Acceleration['LIN_ACC_NO_GRAVITY_z']),min(IMU['LIN_ACC_NO_GRAVITY_z'])),0.05+max(max(Acceleration['LIN_ACC_NO_GRAVITY_z']),max(IMU['LIN_ACC_NO_GRAVITY_z']))])
+    ax[1, 0].set_ylim([-0.05+min(min(AngularPosition['EulerAngle_y']),min(IMU['EulerAngle_y'])),0.05+max(max(AngularPosition['EulerAngle_y']),max(IMU['EulerAngle_y']))])
+    ax[1, 1].set_ylim([-0.05+min(min(AngularPosition['EulerAngle_x']),min(IMU['EulerAngle_x'])),0.05+max(max(AngularPosition['EulerAngle_x']),max(IMU['EulerAngle_x']))])
+    ax[1, 2].set_ylim([-0.05+min(min(AngularPosition['EulerAngle_z']),min(IMU['EulerAngle_z'])),0.05+max(max(AngularPosition['EulerAngle_z']),max(IMU['EulerAngle_z']))])
+    
+    ax[0, 0].set_facecolor("#002b36") 
+    ax[0, 1].set_facecolor("#002b36") 
+    ax[0, 2].set_facecolor("#002b36") 
+    ax[1, 0].set_facecolor("#002b36")
+    ax[1, 1].set_facecolor("#002b36")
+    ax[1, 2].set_facecolor("#002b36")
+    st.pyplot(fig)
+    
+def new_IMU_plot_filt(Acceleration, AngularPosition,
+             accelerations=['LIN_ACC_NO_GRAVITY_x', 'LIN_ACC_NO_GRAVITY_y', 'LIN_ACC_NO_GRAVITY_z'],
+             angularpositions=['EulerAngle_x', 'EulerAngle_y', 'EulerAngle_z']):
+    
+    T = np.array(range(Acceleration.shape[0])) * dt
+    
+    fig, ax = plt.subplots(2, 3, figsize=(15,8), facecolor="#586e75")
+    ax[0, 0].plot(T, Acceleration_calibrated[accelerations[1]], color='red')
+    ax[0, 0].plot(T, Acceleration[accelerations[1]], color='yellow')
+    ax[0, 0].legend(('calibrated','filtered'))
+    ax[0, 0].set_title('Surge Acceleration')
+#     ax[0, 0].set_ylim([Acceleration.min()[0]-0.1*np.abs(Acceleration.min()[0]),Acceleration.max()[0]+0.1*np.abs(Acceleration.max()[0])])
+    ax[0, 1].plot(T, Acceleration_calibrated[accelerations[0]], color='red')
+    ax[0, 1].plot(T, Acceleration[accelerations[0]], color='yellow')
+    ax[0, 1].legend(('calibrated','filtered'))
+    ax[0, 1].set_title('Sway Acceleration')
+#     ax[0, 1].set_ylim([Acceleration.min()[1]-0.1*np.abs(Acceleration.min()[1]),Acceleration.max()[1]+0.1*np.abs(Acceleration.max()[1])])
+    ax[0, 2].plot(T, Acceleration_calibrated[accelerations[2]], color='red')
+    ax[0, 2].plot(T, Acceleration[accelerations[2]], color='yellow')
+    ax[0, 2].legend(('calibrated','filtered'))
+    ax[0, 2].set_title('Heave Acceleration')
+#     ax[0, 2].set_ylim([Acceleration.min()[2]-0.1*np.abs(Acceleration.min()[2]),Acceleration.max()[2]+0.1*np.abs(Acceleration.max()[2])])
+    ax[1, 0].plot(T, AngularPosition_calibrated[angularpositions[1]], color='red')
+    ax[1, 0].plot(T, AngularPosition[angularpositions[1]], color='yellow')
+    ax[1, 0].legend(('calibrated','filtered'))
+    ax[1, 0].set_title('Roll Rotation')
+#     ax[1, 0].set_ylim([AngularPosition.min()[0]-0.1*np.abs(AngularPosition.min()[0]),AngularPosition.max()[0]+0.1*np.abs(AngularPosition.max()[0])])
+    ax[1, 1].plot(T, AngularPosition_calibrated[angularpositions[0]], color='red')
+    ax[1, 1].plot(T, AngularPosition[angularpositions[0]], color='yellow')
+    ax[1, 1].legend(('calibrated','filtered'))
+    ax[1, 1].set_title('Pitch Rotation')
+#     ax[1, 1].set_ylim([AngularPosition.min()[1]-0.1*np.abs(AngularPosition.min()[1]),AngularPosition.max()[1]+0.1*np.abs(AngularPosition.max()[1])])
+    ax[1, 2].plot(T, AngularPosition_calibrated[angularpositions[2]], color='red')
+    ax[1, 2].plot(T, AngularPosition[angularpositions[2]], color='yellow')
+    ax[1, 2].legend(('calibrated','filtered'))
+    ax[1, 2].set_title('Yaw Rotation')
+#     ax[1, 2].set_ylim([AngularPosition.min()[2]-0.1*np.abs(AngularPosition.min()[2]),AngularPosition.max()[2]+0.1*np.abs(AngularPosition.max()[2])])
+    
+    ax[0, 0].set_ylim([-0.05+min(min(Acceleration['LIN_ACC_NO_GRAVITY_y']), min(Acceleration_calibrated['LIN_ACC_NO_GRAVITY_y'])),0.05+max(max(Acceleration['LIN_ACC_NO_GRAVITY_y']),max(Acceleration_calibrated['LIN_ACC_NO_GRAVITY_y']))])
+    ax[0, 1].set_ylim([-0.05+min(min(Acceleration['LIN_ACC_NO_GRAVITY_x']),min(Acceleration_calibrated['LIN_ACC_NO_GRAVITY_x'])),0.05+max(max(Acceleration['LIN_ACC_NO_GRAVITY_x']),max(Acceleration_calibrated['LIN_ACC_NO_GRAVITY_x']))])
+    ax[0, 2].set_ylim([-0.05+min(min(Acceleration['LIN_ACC_NO_GRAVITY_z']),min(Acceleration_calibrated['LIN_ACC_NO_GRAVITY_z'])),0.05+max(max(Acceleration['LIN_ACC_NO_GRAVITY_z']),max(Acceleration_calibrated['LIN_ACC_NO_GRAVITY_z']))])
+    ax[1, 0].set_ylim([-0.05+min(min(AngularPosition['EulerAngle_y']),min(AngularPosition_calibrated['EulerAngle_y'])),0.05+max(max(AngularPosition['EulerAngle_y']),max(AngularPosition_calibrated['EulerAngle_y']))])
+    ax[1, 1].set_ylim([-0.05+min(min(AngularPosition['EulerAngle_x']),min(AngularPosition_calibrated['EulerAngle_x'])),0.05+max(max(AngularPosition['EulerAngle_x']),max(AngularPosition_calibrated['EulerAngle_x']))])
+    ax[1, 2].set_ylim([-0.05+min(min(AngularPosition['EulerAngle_z']),min(AngularPosition_calibrated['EulerAngle_z'])),0.05+max(max(AngularPosition['EulerAngle_z']),max(AngularPosition_calibrated['EulerAngle_z']))])
+    
+    ax[0, 0].set_facecolor("#002b36") 
+    ax[0, 1].set_facecolor("#002b36") 
+    ax[0, 2].set_facecolor("#002b36") 
+    ax[1, 0].set_facecolor("#002b36")
+    ax[1, 1].set_facecolor("#002b36")
+    ax[1, 2].set_facecolor("#002b36")
     st.pyplot(fig)
 
 def Quaternion_plot(IMU,
@@ -175,7 +296,7 @@ def Quaternion_plot(IMU,
     
     T = np.array(range(IMU.shape[0])) * dt
     
-    fig, ax = plt.subplots(2, 4, figsize=(15,8))
+    fig, ax = plt.subplots(2, 4, figsize=(15,8), facecolor="#586e75")
     ax[0, 0].plot(T, IMU[angularpositions[0]])
     ax[0, 0].set_title('ANGULAR_POSITION_w')
 #     ax[0, 0].set_ylim([Acceleration.min()[0]-0.1*np.abs(Acceleration.min()[0]),Acceleration.max()[0]+0.1*np.abs(Acceleration.max()[0])])
@@ -210,32 +331,76 @@ def Quaternion_plot(IMU,
     ax[1, 2].set_ylim([-0.05+min(IMU['ANGULAR_POSITION_y_cal']),0.05+max(IMU['ANGULAR_POSITION_y_cal'])])
     ax[1, 3].set_ylim([-0.05+min(IMU['ANGULAR_POSITION_z_cal']),0.05+max(IMU['ANGULAR_POSITION_z_cal'])])
     
+    ax[0, 0].set_facecolor("#002b36") 
+    ax[0, 1].set_facecolor("#002b36") 
+    ax[0, 2].set_facecolor("#002b36") 
+    ax[0, 3].set_facecolor("#002b36")
+    ax[1, 0].set_facecolor("#002b36")
+    ax[1, 1].set_facecolor("#002b36")
+    ax[1, 2].set_facecolor("#002b36")
+    ax[1, 3].set_facecolor("#002b36")
+    
+    st.pyplot(fig)
+    
+def new_Quaternion_plot(IMU,
+             angularpositions=['ANGULAR_POSITION_w', 'ANGULAR_POSITION_x', 'ANGULAR_POSITION_y', 'ANGULAR_POSITION_z'],
+             angularpositions_cal=['ANGULAR_POSITION_w_cal', 'ANGULAR_POSITION_x_cal', 'ANGULAR_POSITION_y_cal', 'ANGULAR_POSITION_z_cal']):
+    
+    T = np.array(range(IMU.shape[0])) * dt
+    
+    fig, ax = plt.subplots(1, 4, figsize=(15,4), facecolor="#586e75")
+    ax[0].plot(T, IMU[angularpositions[0]])
+    ax[0].plot(T, IMU[angularpositions_cal[0]], color='yellow')
+    ax[0].legend(('original','calibrated'))
+    ax[0].set_title('ANGULAR_POSITION_w')
+#     ax[0, 0].set_ylim([Acceleration.min()[0]-0.1*np.abs(Acceleration.min()[0]),Acceleration.max()[0]+0.1*np.abs(Acceleration.max()[0])])
+    ax[1].plot(T, IMU[angularpositions[1]])
+    ax[1].plot(T, IMU[angularpositions_cal[1]], color='yellow')
+    ax[1].legend(('original','calibrated'))
+    ax[1].set_title('ANGULAR_POSITION_x')
+#     ax[0, 1].set_ylim([Acceleration.min()[1]-0.1*np.abs(Acceleration.min()[1]),Acceleration.max()[1]+0.1*np.abs(Acceleration.max()[1])])
+    ax[2].plot(T, IMU[angularpositions[2]])
+    ax[2].plot(T, IMU[angularpositions_cal[2]], color='yellow')
+    ax[2].legend(('original','calibrated'))
+    ax[2].set_title('ANGULAR_POSITION_y')
+#     ax[0, 2].set_ylim([Acceleration.min()[2]-0.1*np.abs(Acceleration.min()[2]),Acceleration.max()[2]+0.1*np.abs(Acceleration.max()[2])])
+    ax[3].plot(T, IMU[angularpositions[3]])
+    ax[3].plot(T, IMU[angularpositions_cal[3]], color='yellow')
+    ax[3].legend(('original','calibrated'))
+    ax[3].set_title('ANGULAR_POSITION_z')
+#     ax[1, 0].set_ylim([AngularPosition.min()[0]-0.1*np.abs(AngularPosition.min()[0]),AngularPosition.max()
+
+    ax[0].set_ylim([-0.05+min(min(IMU['ANGULAR_POSITION_w']),min(IMU['ANGULAR_POSITION_w_cal'])),0.05+max(max(IMU['ANGULAR_POSITION_w']), max(IMU['ANGULAR_POSITION_w_cal']))])
+    ax[1].set_ylim([-0.05+min(min(IMU['ANGULAR_POSITION_x']),min(IMU['ANGULAR_POSITION_x_cal'])),0.05+max(max(IMU['ANGULAR_POSITION_x']), max(IMU['ANGULAR_POSITION_x_cal']))])
+    ax[2].set_ylim([-0.05+min(min(IMU['ANGULAR_POSITION_y']),min(IMU['ANGULAR_POSITION_y_cal'])),0.05+max(max(IMU['ANGULAR_POSITION_y']), max(IMU['ANGULAR_POSITION_y_cal']))])
+    ax[3].set_ylim([-0.05+min(min(IMU['ANGULAR_POSITION_z']),min(IMU['ANGULAR_POSITION_z_cal'])),0.05+max(max(IMU['ANGULAR_POSITION_z']), max(IMU['ANGULAR_POSITION_z_cal']))])
+    
+    ax[0].set_facecolor("#002b36") 
+    ax[1].set_facecolor("#002b36") 
+    ax[2].set_facecolor("#002b36") 
+    ax[3].set_facecolor("#002b36")
+        
     st.pyplot(fig)
     
 with st.sidebar:
-    selected = option_menu("IMU Module", ["Home", 'Upload', 'Data', 'Info', 'Plot', 'Parameters', 'Settings'], 
-           icons=['house', 'cloud-upload', 'table', 'info-circle', 'bar-chart-fill', 'sliders', 'gear'],  menu_icon="cast", default_index=0, styles={
-        "container": {"padding": "0!important", "background-color": "#fafafa"},
-        "icon": {"color": "orange", "font-size": "15px"}, 
-        "nav-link": {"font-size": "15px", "text-align": "left", "margin":"0px", "--hover-color": "#eee"},
-        "nav-link-selected": {"background-color": "green"},
-    })
+    selected = option_menu("IMU Measurment Module", ["Home", 'Data', 'Info', 'Plot', 'Settings'], 
+            icons=['house', 'table', 'info-circle', 'bar-chart-fill', 'gear'],  menu_icon="cast", default_index=0
+                           #, styles={
+#         "container": {"padding": "0!important", "background-color": "#fafafa"},
+#         "icon": {"color": "orange", "font-size": "15px"}, 
+#         "nav-link": {"font-size": "15px", "text-align": "left", "margin":"0px", "--hover-color": "#eee"},
+#         "nav-link-selected": {"background-color": "green"},
+#     }
+                          )
     selected
     uploaded_file = st.file_uploader("Choose a file")
-       
-# if selected == "Upload":
-#     uploaded_file = st.file_uploader("Choose a file")
-
-# try:     
-if uploaded_file is not None:
+           
+try:    
     IMU, info, dt = IMU_read(file=uploaded_file)
 
-#     if selected == "Upload":        
-#         uploaded_file = st.file_uploader("Choose a file")    
-
     if selected == "Home":
-        st.header("IMU Module")
-        st.write("Hello, welcome to this page!")    
+        st.header("IMU Calibration and Preprocessing Module")
+        st.write("This application provides the tool to calibrate and preprocessing the IMU data gathered from IMU devices.")   
 
     if selected == "Data":
         st.header("IMU Data")
@@ -245,52 +410,65 @@ if uploaded_file is not None:
         st.header("Summary of Data Info")
         st.write(info)
 
-        if len(np.where(IMU.dtypes == 'object')[0]) == 0:
-            st.write(f'There exist {len(np.where(IMU.isnull().sum() != 0)[0])} columns with missing Values...')
-            for i in range(len(np.where(IMU.isnull().sum() != 0)[0])):
-                st.write(f'{IMU.columns[np.where(IMU.isnull().sum() != 0)[0][i]]} has {IMU.isnull().sum().iloc[np.where(IMU.isnull().sum() != 0)[0][i]]} missing values!')
-        else:
-            obj_num = len(np.where(IMU.dtypes == 'object')[0])
-            st.write(f'There exist {obj_num} columns with non-integer/non-float values. Please fix them first!')
+#         if len(np.where(IMU.dtypes == 'object')[0]) == 0:
+#             st.write(f'There exist {len(np.where(IMU.isnull().sum() != 0)[0])} columns with missing Values...')
+#             for i in range(len(np.where(IMU.isnull().sum() != 0)[0])):
+#                 st.write(f'{IMU.columns[np.where(IMU.isnull().sum() != 0)[0][i]]} has {IMU.isnull().sum().iloc[np.where(IMU.isnull().sum() != 0)[0][i]]} missing values!')
+#         else:
+#             obj_num = len(np.where(IMU.dtypes == 'object')[0])
+#             st.write(f'There exist {obj_num} columns with non-integer/non-float values. Please fix them first!')
 
     if selected == "Plot":
         st.header('Plot of IMU Data')
-        st.subheader('IMU Rough')
+#         st.subheader('Rough IMU Data')
         Acceleration, AngularPosition = IMU_write(file=uploaded_file)
-        IMU_plot(Acceleration=Acceleration, AngularPosition=AngularPosition)
+#         IMU_plot(Acceleration=Acceleration, AngularPosition=AngularPosition)
 
-        st.subheader('Quarternions')
-        Quaternion_plot(IMU=IMU)
+#         st.subheader('Quarternions')
+#         Quaternion_plot(IMU=IMU)
 
-        st.subheader('IMU Calibrated')
-        Acceleration_calibrated, AngularPosition_calibrated = Calibration(Acceleration=Acceleration, AngularPosition=AngularPosition, cal_period=1)
-        IMU_plot(Acceleration=Acceleration_calibrated, AngularPosition=AngularPosition_calibrated)
+#         st.subheader('Calibrated IMU')
+#         Acceleration_calibrated, AngularPosition_calibrated = Calibration(Acceleration=Acceleration, AngularPosition=AngularPosition, cal_period=cal_period)
+#         IMU_plot(Acceleration=Acceleration_calibrated, AngularPosition=AngularPosition_calibrated)
 
-        st.subheader('IMU Calibrated & Filtered')
-        Acceleration_filtered, AngularPosition_filtered = IMU_filter(Acceleration=Acceleration_calibrated, AngularPosition=AngularPosition_calibrated, w_c=1*pi)
-        IMU_plot(Acceleration=Acceleration_filtered, AngularPosition=AngularPosition_filtered)
+#         st.subheader('Calibrated & Filtered IMU')
+#         Acceleration_filtered, AngularPosition_filtered = IMU_filter(Acceleration=Acceleration_calibrated, AngularPosition=AngularPosition_calibrated, w_c=w_c)
+#         IMU_plot(Acceleration=Acceleration_filtered, AngularPosition=AngularPosition_filtered)
+        
+        option = st.selectbox(
+             'Choose one of the options:',
+             ('Original IMU Data', 'Calibrated + Filtered IMU', 'Quarternions'))
 
-    if selected == "Parameters":
-        st.header("Parameters Dashboar")
-
+        if option == 'Original IMU Data':
+            st.subheader('Original IMU Data')
+            IMU_plot(Acceleration=Acceleration, AngularPosition=AngularPosition)
+        if option == 'Quarternions':
+            st.subheader('Quarternions')
+            new_Quaternion_plot(IMU=IMU)
+#         if option == 'Calibrated IMU':
+#             st.caption("Calibration Parameters:")
+#             _cal_period = st.slider('calibration period', 0.0, 5.0, cal_period)
+#             cal_period = _cal_period
+#             Acceleration_calibrated, AngularPosition_calibrated = Calibration(Acceleration=Acceleration, AngularPosition=AngularPosition, cal_period=cal_period)
+#             st.subheader('Calibrated IMU')
+#             new_IMU_plot_cal(Acceleration=Acceleration_calibrated, AngularPosition=AngularPosition_calibrated)
+        if option == 'Calibrated + Filtered IMU':
+            st.caption("Calibration Parameters:")
+            _cal_period = st.slider('calibration period', 0.0, 5.0, cal_period)
+            cal_period = _cal_period
+            Acceleration_calibrated, AngularPosition_calibrated = Calibration(Acceleration=Acceleration, AngularPosition=AngularPosition, cal_period=cal_period)
+            st.subheader('Calibrated IMU')
+            new_IMU_plot_cal(Acceleration=Acceleration_calibrated, AngularPosition=AngularPosition_calibrated)
+            st.caption("Filter Parameters:")
+            _w_c = st.slider('cutoff frequeny', 0.0, 400.0, w_c)
+            w_c = _w_c
+            st.subheader('Calibrated + Filtered IMU')
+            Acceleration_filtered, AngularPosition_filtered = IMU_filter(Acceleration=Acceleration_calibrated, AngularPosition=AngularPosition_calibrated, w_c=w_c)
+            new_IMU_plot_filt(Acceleration=Acceleration_filtered, AngularPosition=AngularPosition_filtered)
+        
     if selected == "Settings":
-        st.header("General Settings")    
-
-# else:
-#     if selected == "Home":
-#         st.header("IMU Module")
-#         st.write("Hello, welcome to this page!")  
-#     if selected == "Data":
-#         st.header("IMU Data")
-#     if selected == "Info":
-#         st.header("Summary of Data Info")
-#     if selected == "Plot":
-#         st.header('Plot of IMU Data')
-#     if selected == "Parameters":
-#         st.header("Parameters Dashboar")
-#     if selected == "Settings":
-#         st.header("General Settings") 
-
-# except ValueError:
-#     if selected == "Upload":
-#         st.write("No file has been chosen!")
+        st.header("General Settings")  
+except:
+    if selected == "Home":
+        st.header("IMU Calibration and Preprocessing Module")
+        st.write("This application provides the tool to calibrate and preprocessing the IMU data gathered from IMU devices.")  
